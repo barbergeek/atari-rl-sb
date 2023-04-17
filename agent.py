@@ -5,6 +5,9 @@ from pathlib import Path
 from neural import AtariNet
 from collections import deque
 
+from stable_baselines3 import PPO
+
+
 class AtariAgent:
     def __init__(self, state_dim, action_dim, save_dir, checkpoint=None):
         self.state_dim = state_dim
