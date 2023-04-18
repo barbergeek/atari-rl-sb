@@ -8,7 +8,7 @@ from metrics import MetricLogger
 from agent import AtariAgent
 from wrappers import ResizeObservation, SkipFrame
 
-from stable_baselines3 import PPO
+from stable_baselines3 import A2C
 from stable_baselines3.common.env_util import make_atari_env
 from stable_baselines3.common.logger import configure
 
@@ -21,7 +21,7 @@ env = make_atari_env('ALE/Frogger-v5', n_envs=4)
 #env = TransformObservation(env, f=lambda x: x / 255.)
 #env = FrameStack(env, num_stack=4)
 
-model = PPO.load("ppo-frogger")
+model = A2C.load("./a2c-model/best_model")
 
 obs = env.reset()
 

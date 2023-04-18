@@ -1,0 +1,4 @@
+
+Eval num_timesteps=3880000, episode_reward=403.20 +/- 5.91
+Episode length: 2132.40 +/- 339.09
+New best mean reward!

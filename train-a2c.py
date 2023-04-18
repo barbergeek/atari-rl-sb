@@ -11,38 +11,40 @@ from metrics import MetricLogger
 from agent import AtariAgent
 from wrappers import ResizeObservation, SkipFrame
 
-from stable_baselines3 import PPO
+from stable_baselines3 import A2C
 from stable_baselines3.common.env_util import make_atari_env
 from stable_baselines3.common.logger import configure
+from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewardThreshold
 
 startTime = datetime.datetime.now()
 
 # Initialize game environment
-env = make_atari_env('ALE/Frogger-v5', n_envs=16)
-
-# Apply Wrappers to environment
-#env = SkipFrame(env, skip=4) # ALE automatically skips frames, don't do it again...
-#env = GrayScaleObservation(env, keep_dim=False)
-#env = ResizeObservation(env, shape=84)
-#env = TransformObservation(env, f=lambda x: x / 255.)
-#env = FrameStack(env, num_stack=4)
+env = make_atari_env('ALE/Frogger-v5', n_envs=4)
 
 env.reset()
 
-#model = PPO("CnnPolicy", env, verbose=0)
-model = PPO.load("ppo-frogger", env)
+model = A2C("CnnPolicy", env, verbose=0)
+#model = PPO.load("ppo-frogger", env)
 
 #set up logger
-tmp_path = "./sb3_log/"
-new_logger = configure(tmp_path, ["stdout","csv","tensorboard"])
+tmp_path = "./sb3_log-a2c/"
+#new_logger = configure(tmp_path, ["stdout","csv","tensorboard"])
+new_logger = configure(tmp_path, ["csv","tensorboard"])
 model.set_logger(new_logger)
+
+# Use EvalCallback to evaluate model
+eval_callback = EvalCallback(env, best_model_save_path="./a2c-model/", log_path=tmp_path,
+                             eval_freq = 10000, deterministic=True, render=False)
+
+#eval_callback = EvalCallback(env, callback_on_new_best=callback_on_best, verbose=1)
 
 # train
 #model.learn(total_timesteps=env.num_envs * 1_000_000, progress_bar=True)
-model.learn(total_timesteps=4_000_000, progress_bar=True, reset_num_timesteps=False)
+#model.learn(total_timesteps=4_000_000, progress_bar=True, reset_num_timesteps=False)
+model.learn(total_timesteps=4_000_000, progress_bar=True, callback=eval_callback)
 
 # save the training results
-model.save("ppo-frogger")
+model.save("a2c-frogger")
 
 exit()
 
