@@ -1,102 +1,55 @@
 import os
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
-
-import random, datetime
-from pathlib import Path
-
-import gymnasium as gym
-from gymnasium.wrappers import FrameStack, GrayScaleObservation, TransformObservation
-
-from metrics import MetricLogger
-from agent import AtariAgent
-from wrappers import ResizeObservation, SkipFrame
+import datetime
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_atari_env
 from stable_baselines3.common.logger import configure
-from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewardThreshold
+from stable_baselines3.common.callbacks import EvalCallback
+
+from callbacks import DumpBestModelInfo
 
 startTime = datetime.datetime.now()
 
-# Initialize game environment
-env = make_atari_env('ALE/Frogger-v5', n_envs=4)
+# initialization parameters
+game = "Frogger-v5"     # should be part of the Atari Learning Environment space (ALE/{game})
+num_environments = 4    # number of training environments
+steps = 16              # in millions
+model_type = "ppo"      # model to use (change the model in import and code if you change this)
+seed = 12345            # rng seed
+wrapper_kwargs= dict(frame_skip=0)  # Frogger-v5 already frameskips 4, so don't do it again
 
+# where model and tensorboard files will go
+# make a new directory for each run, identifying game, model, and run size (steps)
+# example: Frogger-v5-dqn-16-2023-04-19-22:00:00.00000
+save_path = os.path.join(".",f"{game}-{model_type}-{steps}-{str(startTime).replace(' ','-')}")
+
+# Initialize game environment
+env = make_atari_env(f"ALE/{game}", n_envs=num_environments, wrapper_kwargs=wrapper_kwargs)
 env.reset()
 
+# Instantiate the model
 model = PPO("CnnPolicy", env, verbose=0)
-#model = PPO.load("ppo-frogger", env)
+model.set_random_seed(seed)
 
 #set up logger
-tmp_path = "./sb3_log-ppo/"
-new_logger = configure(tmp_path, ["csv","tensorboard"])
+new_logger = configure(save_path, ["csv","tensorboard"])
 model.set_logger(new_logger)
 
+#custom callback to dump best model data
+dump_data = DumpBestModelInfo(model_type)
+
 # Use EvalCallback to evaluate model
-eval_callback = EvalCallback(env, best_model_save_path="./ppo-model/", log_path=tmp_path,
-                             eval_freq = 10000, deterministic=True, render=False)
+eval_callback = EvalCallback(env, best_model_save_path=save_path, log_path=save_path,
+                             eval_freq = 10000, deterministic=True, render=False, callback_on_new_best=dump_data)
 
 # train
-#model.learn(total_timesteps=env.num_envs * 1_000_000, progress_bar=True)
-model.learn(total_timesteps=4_000_000, progress_bar=True, callback=eval_callback)
+model.learn(total_timesteps=steps * 1_000_000, progress_bar=True, callback=eval_callback)
 
 # save the training results
-model.save("ppo-frogger")
+model.save(os.path.join(save_path,f"{game}-{model_type}-{steps}"))
 
-exit()
-
-save_dir = Path('checkpoints') / datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
-save_dir.mkdir(parents=True)
-
-checkpoint = None # Path('frogger_100k_episodes.chkpt')
-game = AtariAgent(state_dim=(4, 84, 84), action_dim=env.action_space.n, save_dir=save_dir, checkpoint=checkpoint)
-
-logger = MetricLogger(save_dir)
-
-#episodes = 100000
-episodes = 100
-
-### for Loop that train the model num_episodes times by playing the game
-for e in range(episodes):
-
-    state, info = env.reset()
-
-    # Play the game!
-    while True:
-
-        # 4. Run agent on the state
-        action = game.act(state)
-
-        # 5. Agent performs action
-        next_state, reward, truncated, terminated, info = env.step(action)
-        done = truncated or terminated
-
-        # 6. Remember
-        game.cache(state, next_state, action, reward, done)
-
-        # 7. Learn
-        q, loss = game.learn()
-
-        # 8. Logging
-        logger.log_step(reward, loss, q)
-
-        # 9. Update state
-        state = next_state
-
-        # 10. Check if end of game
-        if done:
-            break
-
-    logger.log_episode()
-
-    if e % 50 == 0:
-        logger.record(
-            episode=e,
-            epsilon=game.exploration_rate,
-            step=game.curr_step
-        )
-
-# save the final model
-game.save()
-
+# report run (clock) time
 delta = datetime.datetime.now() - startTime
 print("Elapsed time = {}".format(delta))
+
+exit()
