@@ -34,7 +34,7 @@ wrapper_kwargs= dict(frame_skip=0)
 #   ent_coef: 0.01
 
 frame_stack = 4
-n_envs = 4    # number of training environments
+n_envs = 8    # number of training environments
 n_steps = 128
 n_epochs = 4
 batch_size = 256
@@ -47,7 +47,7 @@ ent_coef = 0.01
 # where model and tensorboard files will go
 # make a new directory for each run, identifying game, model, and run size (steps)
 # example: Frogger-v5-dqn-16-2023-04-19-22:00:00.00000
-save_path = os.path.join(".",f"{game}-{model_type}-{n_timesteps}-{str(startTime).replace(' ','-')}")
+save_path = os.path.join(".",f"{game}-{model_type}-{n_timesteps}-zoo-{str(startTime).replace(' ','-')}")
 
 # Initialize game environment
 env = make_atari_env(f"ALE/{game}", n_envs=n_envs, wrapper_kwargs=wrapper_kwargs)
