@@ -9,7 +9,8 @@ Scott Hoge
 ## Installation
 Conda environment in environment.yml
 
-`$ conda env create -n <environment name>    # default atari-rl-sb`
+`$ conda env create -n <environment name>    # default atari-rl-sb`  
+`$ conda activate <environment name> `  
 
 ### Training modules for Atari 2600 Frogger
 `$ python train-<model>.py               # for default hyperparameters`  
