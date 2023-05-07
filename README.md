@@ -2,7 +2,8 @@
 
 Atari Reinforcement Learning with Stable Baselines 3
 
-
+Virginia Tech Spring 2023 AI Innovation & Machine Learning (ECE 5494)  
+Scott Hoge
 
 ## Installation
 Conda environment in environment.yml
